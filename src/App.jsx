@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
+import { Board, reset } from './TicTacToe.jsx'
+
 
 function App() {
   const [count, setCount] = useState(0)
@@ -16,17 +18,19 @@ function App() {
       });
   }, []);
 
-  useEffect(() => {
-    fetch('/api/songs')
-      .then(res => res.json())
-      .then(data => {
-        console.log(data);
-        setSongs(data);
-      })
-      .catch((err) => {
-        console.log(err.message);
-      });
-  }, []);
+  function getSongs() {
+    return (
+      fetch('/api/songs')
+        .then(res => res.json())
+        .then(data => {
+          console.log(data);
+          setSongs(data);
+        })
+        .catch((err) => {
+          console.log(err.message);
+        })
+    );
+  };
 
   return (
     <>
@@ -43,8 +47,21 @@ function App() {
         <button onClick={() => setCount((count) => count + 1)}>
           count is {count}
         </button>
+      </div>
+      <p className="read-the-docs">
+        Click on the Vite and React logos to learn more
+      </p>
+      <h2>tic tac toe game</h2>
+      <div className="card">
+        {Board()}
+      </div>
+      <h2>flask api demo</h2>
+      <div className="card">
         <p>Current time is {new Date(currentTime).toLocaleString()}. (...maybe not)</p>
+      </div>
+      <div>
         <h3>songs!</h3>
+        <button className="square" onClick={() => getSongs()}>get songs</button>
         <div>
           {songs.map((song) => {
             return (
@@ -54,10 +71,8 @@ function App() {
             )
           })}
         </div>
+        <button className="reset-button" onClick={() => reset()}>reset</button>
       </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
     </>
   )
 }
