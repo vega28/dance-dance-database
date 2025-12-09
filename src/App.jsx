@@ -2,8 +2,11 @@ import { useState, useEffect } from 'react'
 import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
-import { Board, reset } from './TicTacToe.jsx'
 
+
+function reset() {
+  window.location.reload();
+}
 
 function App() {
   const [count, setCount] = useState(0)
@@ -51,10 +54,6 @@ function App() {
       <p className="read-the-docs">
         Click on the Vite and React logos to learn more
       </p>
-      <h2>tic tac toe game</h2>
-      <div className="card">
-        {Board()}
-      </div>
       <h2>flask api demo</h2>
       <div className="card">
         <p>Current time is {new Date(currentTime).toLocaleString()}. (...maybe not)</p>
