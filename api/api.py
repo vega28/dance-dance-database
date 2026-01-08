@@ -2,11 +2,13 @@ import os
 from dotenv import load_dotenv
 from flask import Flask
 from flask_cors import CORS
+from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.orm import DeclarativeBase
-from sqlalchemy import URL
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy import URL, ForeignKey, String
 
 load_dotenv()
+
 
 # database setup
 class Base(DeclarativeBase):
@@ -22,13 +24,44 @@ db_uri = URL.create(
     database=os.getenv('DB_NAME'),
 )
 
+
 # api setup
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = db_uri
 db.init_app(app)
 CORS(app)
+migrate = Migrate(app, db)
 
-# define routes
+
+# models
+class Artist(db.Model):
+    __tablename__ = 'artists'
+    
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
+    
+    def to_dict(self):
+        return {'id': self.id, 'name': self.name}
+
+class Song(db.Model):
+    __tablename__ = 'songs'
+    
+    id: Mapped[int] = mapped_column(primary_key=True)
+    title: Mapped[str] = mapped_column(String(255), nullable=False)
+    artist_id: Mapped[int] = mapped_column(ForeignKey('artists.id'), nullable=False)
+    # TODO: make status an enum
+    status: Mapped[str] = mapped_column(String(50), default='to do')
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'title': self.title,
+            'artist_id': self.artist_id,
+            'status': self.status
+        }
+
+
+# routes
 @app.route('/api/hello', methods=['GET'])
 def get_data():
     return {'message': 'hello from flask!'}
@@ -42,6 +75,7 @@ def get_songs():
         {'id': 4, 'title': 'Starmine', 'artist': 'Da-Ice', 'status': 'done'},
         ]
     return songs
+
 
 # ----------------------------------
 if __name__ == "__main__":
