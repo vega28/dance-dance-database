@@ -26,6 +26,7 @@
 ### 5. database setup
 - create a dancenerd postgres database
 - add configuration in a `.env` file in the root of the project
+- seed db: `flask --app api.api seed`
 
 ## run server
 

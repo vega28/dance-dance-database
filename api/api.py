@@ -78,6 +78,21 @@ def get_songs():
 
 
 # ----------------------------------
+# Register CLI commands (import lazily to avoid circular import issues)
+def _register_cli_commands(app):
+    try:
+        from api.seed import seed
+        app.cli.add_command(seed)
+    except Exception:
+        # don't break imports if seed or its dependencies aren't available
+        # FIXME: set up seeding properly
+        print("⚠️ Could not register CLI commands")
+        pass
+
+
+# register at import time so `flask --app api.api ...` sees the command
+_register_cli_commands(app)
+
 if __name__ == "__main__":
     with app.app_context():
         try:
