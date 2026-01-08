@@ -1,3 +1,5 @@
+# dancenerd app
+
 ## local setup
 
 ### 1. clone the repo

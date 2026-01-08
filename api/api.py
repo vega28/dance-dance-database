@@ -1,10 +1,35 @@
+import os
+from dotenv import load_dotenv
 import time
 from flask import Flask
 from flask_cors import CORS
+from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy import URL
 
+load_dotenv()
+
+# database setup
+class Base(DeclarativeBase):
+  pass
+
+db = SQLAlchemy(model_class=Base)
+db_uri = URL.create(
+    "postgresql+psycopg2",
+    username=os.getenv('DB_USER'),
+    password=os.getenv('DB_PASSWORD'),
+    host=os.getenv('DB_HOST'),
+    port=os.getenv('DB_PORT'),
+    database=os.getenv('DB_NAME'),
+)
+
+# api setup
 app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = db_uri
+db.init_app(app)
 CORS(app)
 
+# define routes
 @app.route('/api/hello', methods=['GET'])
 def get_data():
     return {'message': 'hello from flask!'}
