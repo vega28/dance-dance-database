@@ -1,6 +1,5 @@
 import os
 from dotenv import load_dotenv
-import time
 from flask import Flask
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
@@ -34,10 +33,6 @@ CORS(app)
 def get_data():
     return {'message': 'hello from flask!'}
 
-@app.route('/api/time', methods=['GET'])
-def get_time():
-    return { 'time': time.time()}
-
 @app.route('/api/songs', methods=['GET'])
 def get_songs():
     songs = [
@@ -50,4 +45,10 @@ def get_songs():
 
 # ----------------------------------
 if __name__ == "__main__":
+    with app.app_context():
+        try:
+            db.session.execute(db.text('SELECT 1'))
+            print("✓ Database connection successful!")
+        except Exception as e:
+            print(f"✗ Database connection failed: {e}")
     app.run()
