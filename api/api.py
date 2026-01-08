@@ -66,14 +66,14 @@ class Song(db.Model):
 def get_data():
     return {'message': 'hello from flask!'}
 
+@app.route('/api/artists', methods=['GET'])
+def get_artists():
+    artists = [artist.to_dict() for artist in Artist.query.all()]
+    return artists
+
 @app.route('/api/songs', methods=['GET'])
 def get_songs():
-    songs = [
-        {'id': 1, 'title': 'Wave', 'artist': 'ATEEZ', 'status': 'to do'},
-        {'id': 2, 'title': 'Butter', 'artist': 'BTS', 'status': 'needs review'},
-        {'id': 3, 'title': 'Eenie Meenie', 'artist': 'Chungha', 'status': 'done'},
-        {'id': 4, 'title': 'Starmine', 'artist': 'Da-Ice', 'status': 'done'},
-        ]
+    songs = [song.to_dict() for song in Song.query.all()]
     return songs
 
 
