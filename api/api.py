@@ -4,7 +4,7 @@ from flask import Flask
 from flask_cors import CORS
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy import URL, ForeignKey, String
 
 load_dotenv()
@@ -40,8 +40,15 @@ class Artist(db.Model):
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
     
+    # relationships
+    songs: Mapped[list['Song']] = relationship('Song', back_populates='artist', cascade='all, delete-orphan')
+
     def to_dict(self):
-        return {'id': self.id, 'name': self.name}
+        return {
+            'id': self.id, 
+            'name': self.name,
+            'songs': [song.title for song in self.songs] if self.songs else []
+            }
 
 class Song(db.Model):
     __tablename__ = 'songs'
@@ -52,10 +59,14 @@ class Song(db.Model):
     # TODO: make status an enum
     status: Mapped[str] = mapped_column(String(50), default='to do')
     
+    # relationships
+    artist: Mapped['Artist'] = relationship('Artist', back_populates='songs')
+    
     def to_dict(self):
         return {
             'id': self.id,
             'title': self.title,
+            'artist': self.artist.name,
             'artist_id': self.artist_id,
             'status': self.status
         }

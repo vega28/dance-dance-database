@@ -1,4 +1,4 @@
-"""Tests for database connection."""
+"""Tests for database connection.""" # FIXME
 import pytest
 from sqlalchemy import text
 

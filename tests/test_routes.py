@@ -28,6 +28,7 @@ class TestSongsRoute:
             assert 'id' in song
             assert 'title' in song
             assert 'artist_id' in song
+            assert 'artist' in song
             assert 'status' in song
 
 
@@ -47,6 +48,7 @@ class TestArtistsRoute:
         for artist in artists:
             assert 'id' in artist
             assert 'name' in artist
+            assert 'songs' in artist
 
     def test_artist_names_match_seed_data(self, client, seed_db):
         """Test that artist names match seeded data."""

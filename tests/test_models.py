@@ -40,6 +40,7 @@ class TestArtistModel:
         artist_dict = artist.to_dict()
         assert artist_dict['id'] == artist.id
         assert artist_dict['name'] == 'Test Artist'
+        assert artist_dict['songs'] == []
 
     def test_query_artist_by_name(self, app_context):
         """Test querying artist by name."""
@@ -62,6 +63,8 @@ class TestArtistModel:
         
         with pytest.raises(IntegrityError):
             db.session.commit()
+    
+    # TODO: test relationship with songs
 
 
 class TestSongModel:
@@ -125,6 +128,7 @@ class TestSongModel:
         song_dict = song.to_dict()
         assert song_dict['id'] == song.id
         assert song_dict['title'] == 'Dict Test Song'
+        assert song_dict['artist'] == artist.name
         assert song_dict['artist_id'] == artist.id
         assert song_dict['status'] == 'needs review'
 
