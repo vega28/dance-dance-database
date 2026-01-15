@@ -72,7 +72,7 @@ function FilterableSongTable({ songs }) {
             checked={learnedOnly}
             onChange={(e) => onLearnedOnlyChange(e.target.checked)} />
           {' '}
-          only show songs that are done and learned
+          only show songs that are done
         </label>
       </form>
     );

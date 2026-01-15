@@ -1,8 +1,10 @@
+# dancenerd app
+
 ## local setup
 
 ### 1. clone the repo
   ```
-  git clone https://github.com/vega28dance-dance-database.git
+  git clone https://github.com/vega28/dance-dance-database.git
   cd dance-dance-database
   ```
 
@@ -21,6 +23,10 @@
 ### 4. install JS dependencies
 - `npm install`
 
+### 5. database setup
+- create a dancenerd postgres database
+- add configuration in a `.env` file in the root of the project
+- seed db <!-- FIXME -->
 
 ## run server
 
