@@ -1,5 +1,5 @@
 import os
-from flask import Flask, app
+from flask import Flask
 from flask_cors import CORS
 from flask_migrate import Migrate
 from sqlalchemy import URL
@@ -56,11 +56,11 @@ def get_db_uri(test=False):
 def create_app(test=False):
     from api.models import Artist, Song
     app = Flask(__name__)    
-    app.config['TESTING'] = True if test else False
+    app.config['TESTING'] = test
     app.config['SQLALCHEMY_DATABASE_URI'] = get_db_uri(test)
     db.init_app(app)
     CORS(app)
-    migrate = Migrate(app, db)
+    Migrate(app, db)
 
     # routes ----------------------------------
     @app.route('/api/hello', methods=['GET'])
