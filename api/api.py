@@ -1,3 +1,4 @@
+import logging
 import os
 from dotenv import load_dotenv
 from flask import Flask
@@ -8,7 +9,7 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy import URL, ForeignKey, String
 
 load_dotenv()
-
+logger = logging.getLogger(__name__)
 
 # database setup
 class Base(DeclarativeBase):
@@ -16,127 +17,128 @@ class Base(DeclarativeBase):
 
 db = SQLAlchemy(model_class=Base)
 
-# Validate required database environment variables before constructing the URI
-_db_user = os.getenv('DB_USER')
-_db_password = os.getenv('DB_PASSWORD')
-_db_host = os.getenv('DB_HOST')
-_db_port_raw = os.getenv('DB_PORT')
-_db_name = os.getenv('DB_NAME')
+def get_db_uri(test=False):
+    """Construct the database URI from environment variables."""
+    if test:
+        # Use PostgreSQL test database
+        db_uri = os.getenv('TEST_DATABASE_URI')
+        if not db_uri:
+            raise RuntimeError(
+                "TEST_DATABASE_URI environment variable is not set. "
+                "Please set it to a valid PostgreSQL test database URI before running tests."
+            )
+    else:
+        db_user = os.getenv('DB_USER')
+        db_password = os.getenv('DB_PASSWORD')
+        db_host = os.getenv('DB_HOST')
+        db_port_raw = os.getenv('DB_PORT')
+        db_name = os.getenv('DB_NAME')
 
-_missing_db_vars = [
-    var_name for var_name, value in [
-        ('DB_USER', _db_user),
-        ('DB_PASSWORD', _db_password),
-        ('DB_HOST', _db_host),
-        ('DB_PORT', _db_port_raw),
-        ('DB_NAME', _db_name),
-    ]
-    if value is None or value == ''
-]
+        missing_db_vars = [
+            var_name for var_name, value in [
+                ('DB_USER', db_user),
+                ('DB_PASSWORD', db_password),
+                ('DB_HOST', db_host),
+                ('DB_PORT', db_port_raw),
+                ('DB_NAME', db_name),
+            ]
+            if value is None or value == ''
+        ]
 
-if _missing_db_vars:
-    raise RuntimeError(
-        f"Missing required database environment variable(s): {', '.join(_missing_db_vars)}"
-    )
+        if missing_db_vars:
+            raise RuntimeError(
+                f"Missing required database environment variable(s): {', '.join(missing_db_vars)}"
+            )
 
-try:
-    _db_port = int(_db_port_raw)
-except (TypeError, ValueError):
-    raise RuntimeError("Invalid DB_PORT environment variable: must be an integer")
+        try:
+            db_port = int(db_port_raw)
+        except (TypeError, ValueError):
+            raise RuntimeError("Invalid DB_PORT environment variable: must be an integer")
 
-db_uri = URL.create(
-    "postgresql+psycopg2",
-    username=_db_user,
-    password=_db_password,
-    host=_db_host,
-    port=_db_port,
-    database=_db_name,
-)
+        db_uri = URL.create(
+            "postgresql+psycopg2",
+            username=db_user,
+            password=db_password,
+            host=db_host,
+            port=db_port,
+            database=db_name,
+        )
+    return db_uri
+
+def create_app(test=False):
+    app = Flask(__name__)    
+    app.config['TESTING'] = True if test else False
+    app.config['SQLALCHEMY_DATABASE_URI'] = get_db_uri(test)
+    db.init_app(app)
+    CORS(app)
+    migrate = Migrate(app, db)
 
 
-# api setup
-app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = db_uri
-db.init_app(app)
-CORS(app)
-migrate = Migrate(app, db)
+    # models ----------------------------------
+    # TODO: extract models to separate file
+    class Artist(db.Model):
+        __tablename__ = 'artists'
+        
+        id: Mapped[int] = mapped_column(primary_key=True)
+        name: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
+        
+        # relationships
+        songs: Mapped[list['Song']] = relationship('Song', back_populates='artist', cascade='all, delete-orphan')
 
+        def to_dict(self):
+            return {
+                'id': self.id, 
+                'name': self.name,
+                'songs': [song.title for song in self.songs] if self.songs else []
+                }
 
-# models
-class Artist(db.Model):
-    __tablename__ = 'artists'
-    
-    id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
-    
-    # relationships
-    songs: Mapped[list['Song']] = relationship('Song', back_populates='artist', cascade='all, delete-orphan')
-
-    def to_dict(self):
-        return {
-            'id': self.id, 
-            'name': self.name,
-            'songs': [song.title for song in self.songs] if self.songs else []
+    class Song(db.Model):
+        __tablename__ = 'songs'
+        
+        id: Mapped[int] = mapped_column(primary_key=True)
+        title: Mapped[str] = mapped_column(String(255), nullable=False)
+        artist_id: Mapped[int] = mapped_column(ForeignKey('artists.id'), nullable=False)
+        # TODO: make status an enum
+        status: Mapped[str] = mapped_column(String(50), default='to do')
+        
+        # relationships
+        artist: Mapped['Artist'] = relationship('Artist', back_populates='songs')
+        
+        def to_dict(self):
+            return {
+                'id': self.id,
+                'title': self.title,
+                'artist': self.artist.name,
+                'artist_id': self.artist_id,
+                'status': self.status
             }
 
-class Song(db.Model):
-    __tablename__ = 'songs'
-    
-    id: Mapped[int] = mapped_column(primary_key=True)
-    title: Mapped[str] = mapped_column(String(255), nullable=False)
-    artist_id: Mapped[int] = mapped_column(ForeignKey('artists.id'), nullable=False)
-    # TODO: make status an enum
-    status: Mapped[str] = mapped_column(String(50), default='to do')
-    
-    # relationships
-    artist: Mapped['Artist'] = relationship('Artist', back_populates='songs')
-    
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'title': self.title,
-            'artist': self.artist.name,
-            'artist_id': self.artist_id,
-            'status': self.status
-        }
 
+    # routes ----------------------------------
+    @app.route('/api/hello', methods=['GET'])
+    def get_data():
+        return {'message': 'hello from flask!'}
 
-# routes
-@app.route('/api/hello', methods=['GET'])
-def get_data():
-    return {'message': 'hello from flask!'}
+    @app.route('/api/artists', methods=['GET'])
+    def get_artists():
+        artists = [artist.to_dict() for artist in Artist.query.all()]
+        return artists
 
-@app.route('/api/artists', methods=['GET'])
-def get_artists():
-    artists = [artist.to_dict() for artist in Artist.query.all()]
-    return artists
+    @app.route('/api/songs', methods=['GET'])
+    def get_songs():
+        songs = [song.to_dict() for song in Song.query.all()]
+        return songs
 
-@app.route('/api/songs', methods=['GET'])
-def get_songs():
-    songs = [song.to_dict() for song in Song.query.all()]
-    return songs
-
+    return app
 
 # ----------------------------------
-# Register CLI commands (import lazily to avoid circular import issues)
-def _register_cli_commands(app):
-    try:
-        from api.seed import seed
-        app.cli.add_command(seed)
-    except Exception:
-        # don't break imports if seed or its dependencies aren't available
-        # FIXME: set up seeding properly
-        print("⚠️ Could not register CLI commands")
-
-
-# register at import time so `flask --app api.api ...` sees the command
-_register_cli_commands(app)
 
 if __name__ == "__main__":
+    app = create_app()
     with app.app_context():
         try:
             db.session.execute(db.text('SELECT 1'))
-            print("✓ Database connection successful!")
+            logger.info("✓ Database connection successful!")
         except Exception as e:
-            print(f"✗ Database connection failed: {e}")
+            logger.error(f"✗ Database connection failed: {e}")
     app.run()

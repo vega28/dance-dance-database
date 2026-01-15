@@ -4,7 +4,7 @@
 
 ### 1. clone the repo
   ```
-  git clone https://github.com/vega28dance-dance-database.git
+  git clone https://github.com/vega28/dance-dance-database.git
   cd dance-dance-database
   ```
 
