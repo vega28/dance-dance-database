@@ -15,13 +15,42 @@ class Base(DeclarativeBase):
   pass
 
 db = SQLAlchemy(model_class=Base)
+
+# Validate required database environment variables before constructing the URI
+_db_user = os.getenv('DB_USER')
+_db_password = os.getenv('DB_PASSWORD')
+_db_host = os.getenv('DB_HOST')
+_db_port_raw = os.getenv('DB_PORT')
+_db_name = os.getenv('DB_NAME')
+
+_missing_db_vars = [
+    var_name for var_name, value in [
+        ('DB_USER', _db_user),
+        ('DB_PASSWORD', _db_password),
+        ('DB_HOST', _db_host),
+        ('DB_PORT', _db_port_raw),
+        ('DB_NAME', _db_name),
+    ]
+    if value is None or value == ''
+]
+
+if _missing_db_vars:
+    raise RuntimeError(
+        f"Missing required database environment variable(s): {', '.join(_missing_db_vars)}"
+    )
+
+try:
+    _db_port = int(_db_port_raw)
+except (TypeError, ValueError):
+    raise RuntimeError("Invalid DB_PORT environment variable: must be an integer")
+
 db_uri = URL.create(
     "postgresql+psycopg2",
-    username=os.getenv('DB_USER'),
-    password=os.getenv('DB_PASSWORD'),
-    host=os.getenv('DB_HOST'),
-    port=os.getenv('DB_PORT'),
-    database=os.getenv('DB_NAME'),
+    username=_db_user,
+    password=_db_password,
+    host=_db_host,
+    port=_db_port,
+    database=_db_name,
 )
 
 
@@ -98,7 +127,6 @@ def _register_cli_commands(app):
         # don't break imports if seed or its dependencies aren't available
         # FIXME: set up seeding properly
         print("⚠️ Could not register CLI commands")
-        pass
 
 
 # register at import time so `flask --app api.api ...` sees the command

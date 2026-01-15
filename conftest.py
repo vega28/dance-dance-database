@@ -7,7 +7,13 @@ from api.api import app, db
 def client():
     """Create a test client with a PostgreSQL test database."""
     # Use PostgreSQL test database
-    app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('TEST_DATABASE_URI')
+    test_db_uri = os.getenv('TEST_DATABASE_URI')
+    if not test_db_uri:
+        raise RuntimeError(
+            "TEST_DATABASE_URI environment variable is not set. "
+            "Please set it to a valid PostgreSQL test database URI before running tests."
+        )
+    app.config['SQLALCHEMY_DATABASE_URI'] = test_db_uri
     app.config['TESTING'] = True
 
     with app.app_context():
