@@ -1,21 +1,9 @@
-import logging
 import os
-from dotenv import load_dotenv
-from flask import Flask
+from flask import Flask, app
 from flask_cors import CORS
 from flask_migrate import Migrate
-from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
-from sqlalchemy import URL, ForeignKey, String
-
-load_dotenv()
-logger = logging.getLogger(__name__)
-
-# database setup
-class Base(DeclarativeBase):
-  pass
-
-db = SQLAlchemy(model_class=Base)
+from sqlalchemy import URL
+from . import db, logger
 
 def get_db_uri(test=False):
     """Construct the database URI from environment variables."""
@@ -66,53 +54,13 @@ def get_db_uri(test=False):
     return db_uri
 
 def create_app(test=False):
+    from api.models import Artist, Song
     app = Flask(__name__)    
     app.config['TESTING'] = True if test else False
     app.config['SQLALCHEMY_DATABASE_URI'] = get_db_uri(test)
     db.init_app(app)
     CORS(app)
     migrate = Migrate(app, db)
-
-
-    # models ----------------------------------
-    # TODO: extract models to separate file
-    class Artist(db.Model):
-        __tablename__ = 'artists'
-        
-        id: Mapped[int] = mapped_column(primary_key=True)
-        name: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
-        
-        # relationships
-        songs: Mapped[list['Song']] = relationship('Song', back_populates='artist', cascade='all, delete-orphan')
-
-        def to_dict(self):
-            return {
-                'id': self.id, 
-                'name': self.name,
-                'songs': [song.title for song in self.songs] if self.songs else []
-                }
-
-    class Song(db.Model):
-        __tablename__ = 'songs'
-        
-        id: Mapped[int] = mapped_column(primary_key=True)
-        title: Mapped[str] = mapped_column(String(255), nullable=False)
-        artist_id: Mapped[int] = mapped_column(ForeignKey('artists.id'), nullable=False)
-        # TODO: make status an enum
-        status: Mapped[str] = mapped_column(String(50), default='to do')
-        
-        # relationships
-        artist: Mapped['Artist'] = relationship('Artist', back_populates='songs')
-        
-        def to_dict(self):
-            return {
-                'id': self.id,
-                'title': self.title,
-                'artist': self.artist.name,
-                'artist_id': self.artist_id,
-                'status': self.status
-            }
-
 
     # routes ----------------------------------
     @app.route('/api/hello', methods=['GET'])
@@ -134,7 +82,9 @@ def create_app(test=False):
 # ----------------------------------
 
 if __name__ == "__main__":
+    from api.seed import seed
     app = create_app()
+    seed()
     with app.app_context():
         try:
             db.session.execute(db.text('SELECT 1'))

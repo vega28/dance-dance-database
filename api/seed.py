@@ -1,18 +1,14 @@
 """Database seeding command."""
-import click
-from flask.cli import with_appcontext
+from . import db, logger
 
-
-@click.command('seed')
-@with_appcontext
 def seed():
     """Seed the database with initial data."""
     # import models lazily to avoid circular imports when registering CLI
-    from api.api import db, Artist, Song
+    from api.models import Artist, Song
 
     # Check if data already exists
     if Artist.query.first():
-        click.echo("Database already seeded. Skipping...")
+        logger.warning("Database already seeded. Skipping...")
         return
 
     # Create artists
@@ -30,7 +26,7 @@ def seed():
         db.session.add(artist)
     
     db.session.commit()
-    click.echo(f"✓ Created {len(artists)} artists")
+    logger.info(f"✓ Created {len(artists)} artists")
     
     # Create songs
     songs_data = [
@@ -53,5 +49,5 @@ def seed():
             db.session.add(song)
     
     db.session.commit()
-    click.echo(f"✓ Created {len(songs)} songs")
-    click.echo("✓ Database seeded successfully!")
+    logger.info(f"✓ Created {len(songs)} songs")
+    logger.info("✓ Database seeded successfully!")
