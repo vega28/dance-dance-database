@@ -82,12 +82,13 @@ def create_app(test=False):
 # ----------------------------------
 
 if __name__ == "__main__":
-    from api.seed import seed
     app = create_app()
-    seed()
     with app.app_context():
+        from api.seed import seed
+        from sqlalchemy import text
+        seed()
         try:
-            db.session.execute(db.text('SELECT 1'))
+            db.session.execute(text('SELECT 1'))
             logger.info("✓ Database connection successful!")
         except Exception as e:
             logger.error(f"✗ Database connection failed: {e}")
