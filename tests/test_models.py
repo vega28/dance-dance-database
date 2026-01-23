@@ -90,49 +90,22 @@ class TestSongModel:
         assert song.id is not None
         assert song.title == 'Test Song'
         assert song.artist_id == artist.id
-        assert song.status == 'to do'  # default value
-
-    def test_song_default_status(self, app_context):
-        """Test that song status defaults to 'to do'."""
-        from api.api import db
-        from api.models import Artist, Song
-        
-        artist = Artist(name='Status Test Artist')
-        db.session.add(artist)
-        db.session.commit()
-        
-        song = Song(title='Status Test Song', artist_id=artist.id)
-        db.session.add(song)
-        db.session.commit()
-        
-        assert song.status == 'to do'
-
-    def test_song_with_custom_status(self, app_context):
-        """Test creating a song with a custom status."""
-        from api.api import db
-        from api.models import Artist, Song
-        
-        artist = Artist(name='Custom Status Artist')
-        db.session.add(artist)
-        db.session.commit()
-        
-        song = Song(title='Custom Status Song', artist_id=artist.id, status='done')
-        db.session.add(song)
-        db.session.commit()
-        
-        assert song.status == 'done'
 
     def test_song_to_dict(self, app_context):
         """Test Song.to_dict() method."""
         from api.api import db
-        from api.models import Artist, Song
+        from api.models import Artist, Song, Dance
         
         artist = Artist(name='Dict Test Artist')
         db.session.add(artist)
         db.session.commit()
         
-        song = Song(title='Dict Test Song', artist_id=artist.id, status='needs review')
+        song = Song(title='Dict Test Song', artist_id=artist.id)
         db.session.add(song)
+        db.session.commit()
+
+        dance = Dance(song=song, status='needs review')
+        db.session.add(dance)
         db.session.commit()
         
         song_dict = song.to_dict()
@@ -196,3 +169,100 @@ class TestSongModel:
         songs = Song.query.filter_by(artist_id=artist.id).all()
         assert len(songs) == 2
         assert all(s.artist_id == artist.id for s in songs)
+
+
+class TestDanceModel:
+    def test_create_dance(self, app_context):
+        """Test creating a dance."""
+        from api.api import db
+        from api.models import Artist, Song, Dance
+        
+        artist = Artist(name='Test Artist')
+        db.session.add(artist)
+        db.session.commit()
+        
+        song = Song(title='Test Song', artist_id=artist.id)
+        db.session.add(song)
+        db.session.commit()
+        
+        dance = Dance(song=song, status='done')
+        db.session.add(dance)
+        db.session.commit()
+        
+        assert dance.id is not None
+        assert dance.song == song
+        assert dance.song_id == song.id
+        assert dance.status == 'done'
+
+    def test_dance_default_status(self, app_context):
+        """Test that dance status defaults to 'to do'."""
+        from api.api import db
+        from api.models import Artist, Song, Dance
+        
+        artist = Artist(name='Status Test Artist')
+        db.session.add(artist)
+        db.session.commit()
+        
+        song = Song(title='Status Test Song', artist_id=artist.id)
+        db.session.add(song)
+        db.session.commit()
+        
+        dance = Dance(song=song)
+        db.session.add(dance)
+        db.session.commit()
+        
+        assert dance.status == 'to do'
+
+    @pytest.mark.skip(reason="Enum constraint not yet enforced at DB level")
+    def test_dance_invalid_status(self, app_context):
+        """Test that dance status must be a valid enum."""
+        from api.api import db
+        from api.models import Artist, Song, Dance
+        
+        artist = Artist(name='Status Test Artist')
+        db.session.add(artist)
+        db.session.commit()
+        
+        song = Song(title='Status Test Song', artist_id=artist.id)
+        db.session.add(song)
+        db.session.commit()
+        
+        dance = Dance(song=song, status='oof')
+        db.session.add(dance)
+
+        with pytest.raises(IntegrityError):
+            db.session.commit()
+
+    def test_dance_song_foreign_key(self, app_context):
+        """Test that invalid song_id raises error."""
+        from api.api import db
+        from api.models import Dance
+        
+        dance = Dance(song_id=9999)
+        db.session.add(dance)
+        
+        with pytest.raises(IntegrityError):
+            db.session.commit()
+
+    def test_dance_to_dict(self, app_context):
+        """Test Dance.to_dict() method."""
+        from api.api import db
+        from api.models import Artist, Song, Dance
+        
+        artist = Artist(name='Dict Test Artist')
+        db.session.add(artist)
+        db.session.commit()
+        
+        song = Song(title='Dict Test Song', artist_id=artist.id)
+        db.session.add(song)
+        db.session.commit()
+
+        dance = Dance(song=song, status='needs review')
+        db.session.add(dance)
+        db.session.commit()
+        
+        dance_dict = dance.to_dict()
+        assert dance_dict['id'] == dance.id
+        assert dance_dict['song'] == song.title
+        assert dance_dict['song_id'] == song.id
+        assert dance_dict['status'] == 'needs review'

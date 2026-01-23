@@ -54,13 +54,13 @@ def get_db_uri(test=False):
     return db_uri
 
 def create_app(test=False):
-    from api.models import Artist, Song
+    from api.models import Artist, Song, Dance
     app = Flask(__name__)    
     app.config['TESTING'] = test
     app.config['SQLALCHEMY_DATABASE_URI'] = get_db_uri(test)
     db.init_app(app)
     CORS(app)
-    Migrate(app, db)
+    Migrate(app, db, compare_type=True)
 
     # routes ----------------------------------
     @app.route('/api/hello', methods=['GET'])
@@ -76,6 +76,11 @@ def create_app(test=False):
     def get_songs():
         songs = [song.to_dict() for song in Song.query.all()]
         return songs
+
+    @app.route('/api/dances', methods=['GET'])
+    def get_dances():
+        dances = [dance.to_dict() for dance in Dance.query.all()]
+        return dances
 
     return app
 

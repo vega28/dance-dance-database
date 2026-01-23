@@ -4,7 +4,7 @@ from . import db, logger
 def seed():
     """Seed the database with initial data."""
     # import models lazily to avoid circular imports when registering CLI
-    from api.models import Artist, Song
+    from api.models import Artist, Song, Dance
 
     # Check if data already exists
     if Artist.query.first():
@@ -30,10 +30,10 @@ def seed():
     
     # Create songs
     songs_data = [
-        {'title': 'Wave', 'artist_name': 'ATEEZ', 'status': 'to do'},
-        {'title': 'Butter', 'artist_name': 'BTS', 'status': 'needs review'},
-        {'title': 'Eenie Meenie', 'artist_name': 'Chungha', 'status': 'done'},
-        {'title': 'Starmine', 'artist_name': 'Da-Ice', 'status': 'done'},
+        {'title': 'Wave', 'artist_name': 'ATEEZ'},
+        {'title': 'Butter', 'artist_name': 'BTS'},
+        {'title': 'Eenie Meenie', 'artist_name': 'Chungha'},
+        {'title': 'Starmine', 'artist_name': 'Da-Ice'},
     ]
     
     songs = []
@@ -43,11 +43,32 @@ def seed():
             song = Song(
                 title=song_data['title'],
                 artist_id=artist.id,
-                status=song_data['status']
             )
             songs.append(song)
             db.session.add(song)
     
     db.session.commit()
     logger.info(f"✓ Created {len(songs)} songs")
+
+    # Create dances
+    dances_data = [
+        {'song_title': 'Wave', 'status': 'to do'},
+        {'song_title': 'Butter', 'status': 'needs review'},
+        {'song_title': 'Eenie Meenie', 'status': 'done'},
+        {'song_title': 'Starmine', 'status': 'done'},
+    ]
+    dances = []
+    for dance_data in dances_data:
+        song = Song.query.filter_by(title=dance_data['song_title']).first()
+        if song:
+            dance = Dance(
+                song_id=song.id,
+                status=dance_data['status']
+            )
+            dances.append(dance)
+            db.session.add(dance)
+    
+    db.session.commit()
+    logger.info(f"✓ Created {len(dances)} dances")
+
     logger.info("✓ Database seeded successfully!")
