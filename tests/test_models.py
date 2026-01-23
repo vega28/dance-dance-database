@@ -2,6 +2,7 @@
 
 import pytest
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy import select
 
 
 class TestArtistModel:
@@ -55,7 +56,7 @@ class TestArtistModel:
         db.session.add(artist)
         db.session.commit()
         
-        found = Artist.query.filter_by(name='Query Test').first()
+        found = db.session.scalars(select(Artist).where(Artist.name == 'Query Test')).first()
         assert found is not None
         assert found.name == 'Query Test'
 
@@ -166,7 +167,7 @@ class TestSongModel:
         db.session.add_all([song1, song2])
         db.session.commit()
         
-        songs = Song.query.filter_by(artist_id=artist.id).all()
+        songs = db.session.scalars(select(Song).where(Song.artist_id == artist.id)).all()
         assert len(songs) == 2
         assert all(s.artist_id == artist.id for s in songs)
 

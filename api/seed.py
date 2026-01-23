@@ -1,5 +1,6 @@
 """Database seeding command."""
 from . import db, logger
+from sqlalchemy import select
 
 def seed():
     """Seed the database with initial data."""
@@ -7,7 +8,7 @@ def seed():
     from api.models import Artist, Song, Dance
 
     # Check if data already exists
-    if Artist.query.first():
+    if len(db.session.scalars(select(Artist)).all()) > 0:
         logger.warning("Database already seeded. Skipping...")
         return
 
@@ -38,7 +39,7 @@ def seed():
     
     songs = []
     for song_data in songs_data:
-        artist = Artist.query.filter_by(name=song_data['artist_name']).first()
+        artist = db.session.scalars(select(Artist).where(Artist.name == song_data['artist_name'])).first()
         if artist:
             song = Song(
                 title=song_data['title'],
@@ -59,7 +60,7 @@ def seed():
     ]
     dances = []
     for dance_data in dances_data:
-        song = Song.query.filter_by(title=dance_data['song_title']).first()
+        song = db.session.scalars(select(Song).where(Song.title == dance_data['song_title'])).first()
         if song:
             dance = Dance(
                 song_id=song.id,
