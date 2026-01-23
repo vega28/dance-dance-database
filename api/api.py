@@ -147,7 +147,9 @@ def create_app(test=False):
     @app.route('/api/songs', methods=['POST'])
     def add_song():
         try:
-            data = request.json
+            data = request.get_json(silent=True)
+            if data is None:
+                return jsonify({'error': 'Request body must be JSON'}), 400
             artist = db.session.scalars(select(Artist).where(Artist.name == data['artist_name'])).first()
             if not artist:
                 return jsonify({'error': 'Artist not found'}), 404

@@ -59,7 +59,7 @@ graph LR
         S_Path --> S_POST["POST (Create)"]:::post
 
         S_ID_Path --> S_GET_ID["GET (Read)"]:::get
-        S_ID_Path --> S_PUT["PUT (Update)"]:::put
+        S_Path --> S_PUT["PUT (Update)"]:::put
         S_ID_Path --> S_DEL["DELETE (Delete)"]:::delete
     end
 

@@ -1,6 +1,5 @@
 """Tests for API routes."""
 
-import pytest
 
 class TestHelloRoute:
     def test_hello_returns_message(self, client):

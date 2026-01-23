@@ -8,7 +8,7 @@ def seed():
     from api.models import Artist, Song, Dance
 
     # Check if data already exists
-    if len(db.session.scalars(select(Artist)).all()) > 0:
+    if db.session.scalars(select(Artist)).first() is not None:
         logger.warning("Database already seeded. Skipping...")
         return
 
