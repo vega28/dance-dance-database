@@ -269,16 +269,21 @@ class TestDanceDetailRoute:
 
 
 class TestAddDanceRoute:
-    def test_add_dance_creates_dance(self, client):
+    def test_add_dance_creates_dance(self, client, app_context):
         """Test that POST /api/dances creates a new dance."""
+        from api.api import db
+        from api.models import Song
+        song = Song(title='Test Song', artist_id=2)
+        db.session.add(song)
+        db.session.commit()
         new_dance = {
-            'song_id': 2,
+            'song_id': song.id,
             'status': 'to do'
         }
         response = client.post('/api/dances', json=new_dance)
         assert response.status_code == 201
         dance = response.json
-        assert dance['song'] == 'Butter'
+        assert dance['song'] == 'Test Song'
         assert dance['status'] == 'to do'
 
 

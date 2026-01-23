@@ -87,7 +87,9 @@ def create_app(test=False):
     @app.route('/api/artists', methods=['POST'])
     def add_artist():
         try:
-            data = request.json
+            data = request.get_json(silent=True)
+            if data is None:
+                return jsonify({'error': 'Request body must be JSON'}), 400
             artist = Artist(name=data['name'])
             db.session.add(artist)
             db.session.commit()
@@ -229,10 +231,20 @@ def create_app(test=False):
     @app.route('/api/dances', methods=['POST'])
     def add_dance():
         try:
-            data = request.json
+            data = request.get_json(silent=True)
+            if data is None:
+                return jsonify({'error': 'Request body must be JSON'}), 400
             song = db.session.get(Song, data['song_id'])
             if not song:
                 return jsonify({'error': 'Song not found'}), 404
+            
+            # Enforce 1:1 relationship: do not allow more than one dance per song
+            existing_dance = db.session.scalars(
+                select(Dance).where(Dance.song_id == song.id)
+            ).first()
+            if existing_dance:
+                return jsonify({'error': 'Dance already exists for this song'}), 409
+            
             status = data.get('status', 'to do')
             dance = Dance(song_id=song.id, status=status)
             db.session.add(dance)
