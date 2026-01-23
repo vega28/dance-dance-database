@@ -63,7 +63,7 @@ def create_app(test=False):
     Migrate(app, db, compare_type=True)
 
     # RESTful routes ----------------------------------
-    # TODO: improve error handling, validation, etc.
+    # TODO: improve error handling, validation, cascade effects, etc.
     
     # hello route
     @app.route('/api/hello', methods=['GET'])
@@ -76,6 +76,59 @@ def create_app(test=False):
         artist_collection = db.session.scalars(select(Artist)).all()
         artists = [artist.to_dict() for artist in artist_collection]
         return artists
+    
+    @app.route('/api/artists/<int:artist_id>', methods=['GET'])
+    def get_artist(artist_id):
+        artist = db.session.get(Artist, artist_id)
+        if not artist:
+            return jsonify({'error': 'Artist not found'}), 404
+        return artist.to_dict()
+    
+    @app.route('/api/artists', methods=['POST'])
+    def add_artist():
+        try:
+            data = request.json
+            artist = Artist(name=data['name'])
+            db.session.add(artist)
+            db.session.commit()
+            return jsonify(artist.to_dict()), 201
+        except KeyError as e:
+            return jsonify({'error': f'Missing field: {e.args[0]}'}), 400
+        except Exception as e:
+            logger.error(f"Error adding artist: {e}")
+            return jsonify({'error': 'Internal server error'}), 500
+    
+    @app.route('/api/artists/<int:artist_id>', methods=['PUT'])
+    def edit_artist(artist_id):
+        try:
+            artist = db.session.get(Artist, artist_id)
+            if not artist:
+                return jsonify({'error': 'Artist not found'}), 404
+            data = request.json
+            if 'name' in data:
+                artist.name = data['name']
+            db.session.commit()
+            return jsonify(artist.to_dict()), 200
+        except KeyError as e:
+            return jsonify({'error': f'Missing field: {e.args[0]}'}), 400
+        except Exception as e:
+            logger.error(f"Error updating artist: {e}")
+            return jsonify({'error': 'Internal server error'}), 500
+    
+    @app.route('/api/artists/<int:artist_id>', methods=['DELETE'])
+    def delete_artist(artist_id):
+        try:
+            artist = db.session.get(Artist, artist_id)
+            if not artist:
+                return jsonify({'error': 'Artist not found'}), 404
+            db.session.delete(artist)
+            db.session.commit()
+            return jsonify({'message': 'Artist deleted successfully'}), 200
+        except KeyError as e:
+            return jsonify({'error': f'Missing field: {e.args[0]}'}), 400
+        except Exception as e:
+            logger.error(f"Error deleting artist: {e}")
+            return jsonify({'error': 'Internal server error'}), 500
 
     # song routes
     @app.route('/api/songs', methods=['GET'])
@@ -163,6 +216,63 @@ def create_app(test=False):
         dance_collection = db.session.scalars(select(Dance)).all()
         dances = [dance.to_dict() for dance in dance_collection]
         return dances
+
+    @app.route('/api/dances/<int:dance_id>', methods=['GET'])
+    def get_dance(dance_id):
+        dance = db.session.get(Dance, dance_id)
+        if not dance:
+            return jsonify({'error': 'Dance not found'}), 404
+        return dance.to_dict()
+
+    @app.route('/api/dances', methods=['POST'])
+    def add_dance():
+        try:
+            data = request.json
+            song = db.session.get(Song, data['song_id'])
+            if not song:
+                return jsonify({'error': 'Song not found'}), 404
+            status = data.get('status', 'to do')
+            dance = Dance(song_id=song.id, status=status)
+            db.session.add(dance)
+            db.session.commit()
+            return jsonify(dance.to_dict()), 201
+        except KeyError as e:
+            return jsonify({'error': f'Missing field: {e.args[0]}'}), 400
+        except Exception as e:
+            logger.error(f"Error adding dance: {e}")
+            return jsonify({'error': 'Internal server error'}), 500
+
+    @app.route('/api/dances/<int:dance_id>', methods=['PUT'])
+    def edit_dance(dance_id):
+        try:
+            dance = db.session.get(Dance, dance_id)
+            if not dance:
+                return jsonify({'error': 'Dance not found'}), 404
+            data = request.json
+            if 'status' in data:
+                dance.status = data['status']
+            db.session.commit()
+            return jsonify(dance.to_dict()), 200
+        except KeyError as e:
+            return jsonify({'error': f'Missing field: {e.args[0]}'}), 400
+        except Exception as e:
+            logger.error(f"Error updating dance: {e}")
+            return jsonify({'error': 'Internal server error'}), 500
+
+    @app.route('/api/dances/<int:dance_id>', methods=['DELETE'])
+    def delete_dance(dance_id):
+        try:
+            dance = db.session.get(Dance, dance_id)
+            if not dance:
+                return jsonify({'error': 'Dance not found'}), 404
+            db.session.delete(dance)
+            db.session.commit()
+            return jsonify({'message': 'Dance deleted successfully'}), 200
+        except KeyError as e:
+            return jsonify({'error': f'Missing field: {e.args[0]}'}), 400
+        except Exception as e:
+            logger.error(f"Error deleting dance: {e}")
+            return jsonify({'error': 'Internal server error'}), 500    
 
     return app
 

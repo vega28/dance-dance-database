@@ -37,6 +37,78 @@ class TestArtistsRoute:
         assert artist_names == expected_names
 
 
+class TestArtistDetailRoute:
+    def test_artist_detail_returns_artist(self, client):
+        """Test that /api/artists/<artist_id> returns the correct artist."""
+        response = client.get('/api/artists/1')
+        assert response.status_code == 200
+        artist = response.json
+        assert artist['id'] == 1
+        assert artist['name'] == 'ATEEZ'
+        assert isinstance(artist['songs'], list)
+
+    def test_artist_detail_invalid_id(self, client):
+        """Test that /api/artists/<artist_id> returns 404 for invalid ID."""
+        response = client.get('/api/artists/999')
+        assert response.status_code == 404
+        assert response.json['error'] == 'Artist not found'
+
+
+class TestAddArtistRoute:
+    def test_add_artist_creates_artist(self, client):
+        """Test that POST /api/artists creates a new artist."""
+        new_artist = {'name': 'New Artist'}
+        response = client.post('/api/artists', json=new_artist)
+        assert response.status_code == 201
+        artist = response.json
+        assert artist['name'] == 'New Artist'
+        assert 'id' in artist
+        assert artist['songs'] == []
+
+    def test_add_artist_missing_name(self, client):
+        """Test that POST /api/artists with missing name returns 400."""
+        new_artist = {}
+        response = client.post('/api/artists', json=new_artist)
+        assert response.status_code == 400
+        assert response.json['error'] == 'Missing field: name'
+
+
+class TestEditArtistRoute:
+    def test_edit_artist_updates_artist(self, client):
+        """Test that PUT /api/artists/<artist_id> updates an existing artist."""
+        updated_data = {'name': 'Updated Artist Name'}
+        response = client.put('/api/artists/1', json=updated_data)
+        assert response.status_code == 200
+        artist = response.json
+        assert artist['name'] == 'Updated Artist Name'
+
+    def test_edit_artist_invalid_id(self, client):
+        """Test that PUT /api/artists/<artist_id> with invalid ID returns 404."""
+        updated_data = {'name': 'Nonexistent Artist'}
+        response = client.put('/api/artists/999', json=updated_data)
+        assert response.status_code == 404
+        assert response.json['error'] == 'Artist not found'
+
+
+class TestDeleteArtistRoute:
+    def test_delete_artist_removes_artist(self, client):
+        """Test that DELETE /api/artists/<artist_id> removes the artist."""
+        response = client.delete('/api/artists/1')
+        assert response.status_code == 200
+        assert response.json['message'] == 'Artist deleted successfully'
+
+        # Verify artist is actually deleted
+        get_response = client.get('/api/artists/1')
+        assert get_response.status_code == 404
+
+    def test_delete_artist_invalid_id(self, client):
+        """Test that DELETE /api/artists/<artist_id> with invalid ID returns 404."""
+        response = client.delete('/api/artists/999')
+        assert response.status_code == 404
+        assert 'error' in response.json
+        assert response.json['error'] == 'Artist not found'
+
+
 class TestSongsRoute:
     def test_songs_returns_list(self, client):
         """Test that /api/songs returns a list of songs."""
@@ -77,7 +149,6 @@ class TestSongDetailRoute:
         assert response.json['error'] == 'Song not found'
 
 
-# @pytest.mark.skip(reason="Add song route not yet implemented")
 class TestAddSongRoute:
     def test_add_song_creates_song(self, client):
         """Test that POST /api/songs creates a new song."""
@@ -179,3 +250,73 @@ class TestDancesRoute:
             'Starmine': 'done'
         }
         assert status_map == expected_statuses
+
+
+class TestDanceDetailRoute:
+    def test_dance_detail_returns_dance(self, client):
+        """Test that /api/dances/<dance_id> returns the correct dance."""
+        response = client.get('/api/dances/1')
+        assert response.status_code == 200
+        dance = response.json
+        assert dance['id'] == 1
+        assert dance['song'] == 'Wave'
+        assert dance['status'] == 'to do'
+    
+    def test_dance_detail_invalid_id(self, client):
+        """Test that /api/dances/<dance_id> returns 404 for invalid ID."""
+        response = client.get('/api/dances/999')
+        assert response.status_code == 404
+        assert response.json['error'] == 'Dance not found'
+
+
+class TestAddDanceRoute:
+    def test_add_dance_creates_dance(self, client):
+        """Test that POST /api/dances creates a new dance."""
+        new_dance = {
+            'song_id': 2,
+            'status': 'to do'
+        }
+        response = client.post('/api/dances', json=new_dance)
+        assert response.status_code == 201
+        dance = response.json
+        assert dance['song'] == 'Butter'
+        assert dance['status'] == 'to do'
+
+
+class TestEditDanceRoute:
+    def test_edit_dance_updates_dance(self, client):
+        """Test that PUT /api/dances/<dance_id> updates an existing dance."""
+        updated_data = {
+            'status': 'done'
+        }
+        response = client.put('/api/dances/1', json=updated_data)
+        assert response.status_code == 200
+        dance = response.json
+        assert dance['status'] == 'done'
+    
+    def test_edit_dance_invalid_id(self, client):
+        """Test that PUT /api/dances/<dance_id> with invalid ID returns 404."""
+        updated_data = {
+            'status': 'done'
+        }
+        response = client.put('/api/dances/999', json=updated_data)
+        assert response.status_code == 404
+        assert 'error' in response.json
+
+
+class TestDeleteDanceRoute:
+    def test_delete_dance_removes_dance(self, client):
+        """Test that DELETE /api/dances/<dance_id> removes the dance."""
+        response = client.delete('/api/dances/1')
+        assert response.status_code == 200
+        assert response.json['message'] == 'Dance deleted successfully'
+
+        # Verify dance is actually deleted
+        get_response = client.get('/api/dances/1')
+        assert get_response.status_code == 404
+    
+    def test_delete_dance_invalid_id(self, client):
+        """Test that DELETE /api/dances/<dance_id> with invalid ID returns 404."""
+        response = client.delete('/api/dances/999')
+        assert response.status_code == 404
+        assert 'error' in response.json
