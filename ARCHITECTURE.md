@@ -95,7 +95,7 @@ graph LR
 graph TD
     Artists["<b>artists</b><br/>---<br/>id: int (PK)<br/>name: string (UNIQUE)<br/>"]
     Songs["<b>songs</b><br/>---<br/>id: int (PK)<br/>title: string<br/>artist_id: int (FK)<br/>"]
-    Dances["<b>dances</b><br/>---<br/>id: int (PK)<br/>status: enum<br/>song_id: int (FK)<br/>"]
+    Dances["<b>dances</b><br/>---<br/>id: int (PK)<br/>status: string<br/>song_id: int (FK)<br/>"]
     
     Artists -->|1:N| Songs
     Songs -->|1:1| Dances
