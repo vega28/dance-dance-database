@@ -49,13 +49,15 @@ class Dance(db.Model):
     
     id: Mapped[int] = mapped_column(primary_key=True)
     song_id: Mapped[int] = mapped_column(ForeignKey('songs.id'), nullable=False)
+    status: Mapped[str] = mapped_column(String(50), default='to do')
 
-    class StatusEnum(str, Enum):
-        TO_DO = 'to do'
-        IN_PROGRESS = 'in progress'
-        DONE = 'done'
-
-    status: Mapped[StatusEnum] = mapped_column(String(50), default=StatusEnum.TO_DO)
+    # TODO: change status to enum and enforce at db level
+    # class StatusEnum(str, Enum):
+    #     TO_DO = 'to do'
+    #     IN_PROGRESS = 'in progress'
+    #     DONE = 'done'
+    #
+    # status: Mapped[StatusEnum] = mapped_column(String(50), default=StatusEnum.TO_DO)
     
     # relationships
     song: Mapped['Song'] = relationship('Song', back_populates='dance')
