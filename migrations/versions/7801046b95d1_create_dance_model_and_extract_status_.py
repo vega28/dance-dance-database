@@ -24,6 +24,32 @@ def upgrade():
     sa.ForeignKeyConstraint(['song_id'], ['songs.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
+
+    # Migrate existing status data from songs to dances
+    connection = op.get_bind()
+    songs_table = sa.table(
+        'songs',
+        sa.column('id', sa.Integer),
+        sa.column('status', sa.VARCHAR(length=50)),
+    )
+    dances_table = sa.table(
+        'dances',
+        sa.column('id', sa.Integer),
+        sa.column('song_id', sa.Integer),
+        sa.column('status', sa.VARCHAR(length=50)),
+    )
+
+    # Set dances.status based on the corresponding songs.status entry.
+    song_status_subquery = (
+        sa.select(songs_table.c.id, songs_table.c.status)
+    )
+    results = connection.execute(song_status_subquery).fetchall()
+    for song_id, status in results:
+        connection.execute(
+            dances_table.insert().values(song_id=song_id, status=status)
+        )
+
+    # Drop the status column from songs table
     with op.batch_alter_table('songs', schema=None) as batch_op:
         batch_op.drop_column('status')
 
