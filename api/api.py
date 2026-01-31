@@ -165,25 +165,13 @@ def create_app(test=False):
             logger.error(f"Error adding song: {e}")
             return jsonify({'error': 'Internal server error'}), 500
     
-    @app.route('/api/songs', methods=['PUT'])
-    # FIXME: required fields: song_id OR title + artist_name
-    def edit_song():
+    @app.route('/api/songs/<int:song_id>', methods=['PUT'])
+    def edit_song(song_id):
         try:
-            data = request.json
-            if 'song_id' in data:
-                song = db.session.get(Song, data['song_id'])
-            else:
-                artist = db.session.scalars(select(Artist).where(Artist.name == data['artist_name'])).first()
-                if not artist:
-                    return jsonify({'error': 'Artist not found'}), 404
-                song = db.session.scalars(
-                    select(Song).where(
-                        Song.title == data['title'],
-                        Song.artist_id == artist.id
-                    )
-                ).first()
+            song = db.session.get(Song, song_id)
             if not song:
                 return jsonify({'error': 'Song not found'}), 404
+            data = request.json or {}
             if 'title' in data:
                 song.title = data['title']
             if 'artist_name' in data:

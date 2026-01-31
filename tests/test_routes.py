@@ -175,26 +175,24 @@ class TestAddSongRoute:
 
 class TestEditSongRoute:
     def test_edit_song_updates_song(self, client):
-        """Test that PUT /api/songs updates an existing song."""
+        """Test that PUT /api/songs/<song_id> updates an existing song."""
         updated_data = {
-            'song_id': 1,
             'title': 'Updated Wave',
             'artist_name': 'ATEEZ'
         }
-        response = client.put('/api/songs', json=updated_data)
+        response = client.put('/api/songs/1', json=updated_data)
         assert response.status_code == 200
         song = response.json
         assert song['title'] == 'Updated Wave'
         assert song['artist'] == 'ATEEZ'
         
     def test_edit_song_invalid_id(self, client):
-        """Test that PUT /api/songs with invalid ID returns 404."""
+        """Test that PUT /api/songs/<song_id> with invalid ID returns 404."""
         updated_data = {
-            'song_id': 999,
             'title': 'Nonexistent Song',
-            'artist_id': 1
+            'artist_name': 'ATEEZ'
         }
-        response = client.put('/api/songs', json=updated_data)
+        response = client.put('/api/songs/999', json=updated_data)
         assert response.status_code == 404
         assert 'error' in response.json
 
