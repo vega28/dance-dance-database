@@ -29,7 +29,48 @@ def upgrade():
 
 
 def downgrade():
+    # Re-add the status column as nullable first so existing rows are allowed.
     with op.batch_alter_table('songs', schema=None) as batch_op:
-        batch_op.add_column(sa.Column('status', sa.VARCHAR(length=50), autoincrement=False, nullable=False, default='to do'))
+        batch_op.add_column(
+            sa.Column('status', sa.VARCHAR(length=50), autoincrement=False, nullable=True)
+        )
 
+    # Backfill songs.status from dances.status where possible.
+    connection = op.get_bind()
+    songs_table = sa.table(
+        'songs',
+        sa.column('id', sa.Integer),
+        sa.column('status', sa.VARCHAR(length=50)),
+    )
+    dances_table = sa.table(
+        'dances',
+        sa.column('song_id', sa.Integer),
+        sa.column('status', sa.VARCHAR(length=50)),
+    )
+
+    # Set songs.status based on the corresponding dances.status entry.
+    status_subquery = (
+        sa.select(dances_table.c.status)
+        .where(dances_table.c.song_id == songs_table.c.id)
+        .correlate(songs_table)
+        .scalar_subquery()
+    )
+    connection.execute(
+        songs_table.update().values(status=status_subquery)
+    )
+
+    # For any songs without a dance entry, default status back to 'to do'.
+    connection.execute(
+        songs_table.update()
+        .where(songs_table.c.status.is_(None))
+        .values(status='to do')
+    )
+
+    # Now enforce NOT NULL on the status column.
+    with op.batch_alter_table('songs', schema=None) as batch_op:
+        batch_op.alter_column(
+            'status',
+            existing_type=sa.VARCHAR(length=50),
+            nullable=False,
+        )
     op.drop_table('dances')
