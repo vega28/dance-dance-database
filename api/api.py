@@ -5,6 +5,8 @@ from flask_migrate import Migrate
 from sqlalchemy import URL, select
 from . import db, logger
 
+migrate = Migrate()
+
 def get_db_uri(test=False):
     """Construct the database URI from environment variables."""
     if test:
@@ -53,14 +55,18 @@ def get_db_uri(test=False):
         )
     return db_uri
 
-def create_app(test=False):
+def create_app(app_config=None):
     from api.models import Artist, Song, Dance
-    app = Flask(__name__)    
-    app.config['TESTING'] = test
-    app.config['SQLALCHEMY_DATABASE_URI'] = get_db_uri(test)
+    app = Flask(__name__)
+    if app_config:
+        for key, value in app_config.items():
+            app.config[key] = value
+    else: # FIXME: make this a config file
+        app.config['TESTING'] = False
+        app.config['SQLALCHEMY_DATABASE_URI'] = get_db_uri()
     db.init_app(app)
     CORS(app)
-    Migrate(app, db, compare_type=True)
+    migrate.init_app(app, db)
 
     # RESTful routes ----------------------------------
     # TODO: improve error handling, validation, cascade effects, etc.

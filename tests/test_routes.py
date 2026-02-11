@@ -267,7 +267,7 @@ class TestDanceDetailRoute:
 
 
 class TestAddDanceRoute:
-    def test_add_dance_creates_dance(self, client, app_context):
+    def test_add_dance_creates_dance(self, client):
         """Test that POST /api/dances creates a new dance."""
         from api.api import db
         from api.models import Song
