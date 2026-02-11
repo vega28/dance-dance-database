@@ -9,7 +9,7 @@ def client():
     app = create_app(test=True)
 
     with app.app_context():
-        db.create_all()
+        db.create_all() # FIXME: this creates tables from Models, not migrations
         seed()
         yield app.test_client()
         db.session.remove()
@@ -20,7 +20,10 @@ def app_context():
     """Provide a Flask app context for tests."""
     app = create_app(test=True)
     with app.app_context():
-        db.create_all()
+        db.create_all() # FIXME: this creates tables from Models, not migrations
+        # TODO: Apply all migrations to the fresh test DB
+        # from flask_migrate import upgrade
+        # upgrade()
         seed()
         yield app
         db.session.remove()

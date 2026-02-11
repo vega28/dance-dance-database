@@ -245,6 +245,30 @@ class TestDanceModel:
         with pytest.raises(IntegrityError):
             db.session.commit()
 
+    @pytest.mark.skip(reason="TODO: run migrations in test setup!")
+    def test_dance_unique_song_constraint(self, app_context):
+        """Test that each song can have only one dance."""
+        from api.api import db
+        from api.models import Artist, Song, Dance
+        
+        artist = Artist(name='Unique Test Artist')
+        db.session.add(artist)
+        db.session.commit()
+        
+        song = Song(title='Unique Test Song', artist_id=artist.id)
+        db.session.add(song)
+        db.session.commit()
+        
+        dance1 = Dance(song=song, status='to do')
+        db.session.add(dance1)
+        db.session.commit()
+        
+        dance2 = Dance(song=song, status='in progress')
+        db.session.add(dance2)
+        
+        with pytest.raises(IntegrityError):
+            db.session.commit()
+
     def test_dance_to_dict(self, app_context):
         """Test Dance.to_dict() method."""
         from api.api import db

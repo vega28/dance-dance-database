@@ -48,7 +48,7 @@ class Dance(db.Model):
     __tablename__ = 'dances'
     
     id: Mapped[int] = mapped_column(primary_key=True)
-    song_id: Mapped[int] = mapped_column(ForeignKey('songs.id'), nullable=False)
+    song_id: Mapped[int] = mapped_column(ForeignKey('songs.id', ondelete='CASCADE'), nullable=False)
     status: Mapped[str] = mapped_column(String(50), default='to do')
 
     # TODO: change status to enum and enforce at db level

@@ -21,8 +21,15 @@ def upgrade():
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('song_id', sa.Integer(), nullable=False),
     sa.Column('status', sa.String(length=50), nullable=False),
-    sa.ForeignKeyConstraint(['song_id'], ['songs.id'], ),
+    sa.ForeignKeyConstraint(["song_id"], ["songs.id"], ondelete="CASCADE"),
+    sa.UniqueConstraint("song_id", name="unique_song_dance"),
     sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(
+        "ix_dance_song_id",      # index name
+        "dances",                 # table name
+        ["song_id"],              # column(s) to index
+        unique=False,             # we already have a UNIQUE constraint
     )
 
     # Migrate existing status data from songs to dances
