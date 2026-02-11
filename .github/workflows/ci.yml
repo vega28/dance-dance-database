@@ -1,0 +1,66 @@
+name: CI – Run pytest (uv)
+
+on:
+  push:
+    branches: [ "**" ]
+  pull_request:
+    branches: [ "**" ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    # --------------------------------------------------------------
+    # 1️⃣ Set up Python (choose the version you actually use)
+    # --------------------------------------------------------------
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"   # replace with "3.14" when it ships
+
+      # --------------------------------------------------------------
+      # 2️⃣ Install uv (the latest stable release)
+      # --------------------------------------------------------------
+      - name: Install uv
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          # Add uv to PATH for the rest of the job
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+      # --------------------------------------------------------------
+      # 3️⃣ Cache uv's download & build caches (optional but recommended)
+      # --------------------------------------------------------------
+      - name: Cache uv directories
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/uv
+            ~/.local/share/uv
+          key: ${{ runner.os }}-uv-${{ hashFiles('uv.lock', 'pyproject.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-uv-
+
+      # --------------------------------------------------------------
+      # 4️⃣ Install project dependencies inside an isolated uv env
+      # --------------------------------------------------------------
+      - name: Install dependencies with uv
+        # `uv sync` respects the lockfile; it also creates a virtual env
+        # under `.venv` by default (you can change the location with
+        # `UV_PROJECT_ENVIRONMENT` if you like).
+        run: |
+          # Ensure we are in the repo root (where pyproject.toml lives)
+          uv sync --frozen   # --frozen aborts if lockfile is out‑of‑date
+
+      # TODO: set up the test db and then uncomment this workflow
+      # --------------------------------------------------------------
+      # 5️⃣ Run pytest inside the uv‑managed environment
+      # --------------------------------------------------------------
+      # - name: Run pytest
+      #   # Activate the uv‑created venv (by default it lives at .venv/)
+      #   run: |
+      #     source .venv/bin/activate
+      #     pytest -v
